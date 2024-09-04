@@ -1,6 +1,6 @@
 {
 	"name": "spacecommz-intercom",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"main": "/dist/main.js",
 	"scripts": {
 		"format": "prettier -w .",
@@ -15,7 +15,7 @@
 		"url": "git+https://github.com/bitfocus/companion-module-spacecommz-intercom.git"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.7.0",
+		"@companion-module/base": "^1.8.0",
 		"cors": "^2.8.5",
 		"express": "^4.19.2",
 		"socket.io": "^4.7.5"
