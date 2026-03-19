@@ -1,7 +1,7 @@
 import { combineRgb } from '@companion-module/base'
+import { graphics } from 'companion-module-utils'
 import type { ModuleInstance } from './main.js'
 import { indexInput } from './inputFields.js'
-
 
 export function UpdateFeedbacks(self: ModuleInstance): void {
 	self.setFeedbackDefinitions({
@@ -31,29 +31,55 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			},
 			options: [indexInput],
 			callback: (feedback) => {
-				let index = feedback.options.index as number -1
-				console.log(self.pls[index],"checking")
-				if(!self.pls[index]){
-					return false
+				let index = (feedback.options.index as number) - 1
+				console.log(self.pls[index], 'checking')
+				if (!self.pls[index]) {
+					return {}
 				}
-				return (self.pls[index].talk)
+				return self.pls[index].talk
 			},
 		},
 		listenState: {
 			name: 'PL Listen State',
-			type: 'boolean',
-			defaultStyle: {
-				bgcolor: combineRgb(22, 162, 73),
-				color: combineRgb(255, 255, 255),
-			},
+			type: 'advanced',
 			options: [indexInput],
 			callback: (feedback) => {
-				let index = feedback.options.index as number -1
-				//if index doesnt exist on pls array return false
-				if(!self.pls[index]){
-					return false
+				let index = (feedback.options.index as number) - 1
+				if (!self.pls[index]) {
+					return {}
 				}
-				return (self.pls[index].listen)
+				if (self.pls[index].listen) {
+					const barValue = self.barValues[index] ?? 0
+					return {
+						bgcolor: combineRgb(22, 162, 73),
+						color: combineRgb(255, 255, 255),
+						imageBuffer: graphics.bar({
+							width: feedback.image!.width,
+							height: feedback.image!.height,
+							colors: [
+								{ size: 50, color: combineRgb(0, 255, 0), background: combineRgb(0, 255, 0), backgroundOpacity: 64 },
+								{
+									size: 25,
+									color: combineRgb(255, 255, 0),
+									background: combineRgb(255, 255, 0),
+									backgroundOpacity: 64,
+								},
+								{ size: 25, color: combineRgb(255, 0, 0), background: combineRgb(255, 0, 0), backgroundOpacity: 64 },
+							],
+							barLength: feedback.image!.height - 10,
+							barWidth: 6,
+							value: barValue,
+							type: 'vertical',
+							offsetX: 64,
+							offsetY: 5,
+							opacity: 255,
+						}),
+					}
+				}
+				return {
+					bgcolor: combineRgb(5, 40, 18),
+					color: combineRgb(255, 255, 255),
+				}
 			},
 		},
 		muteState: {
@@ -67,7 +93,6 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: () => {
 				return !self.mute
 			},
-	}
-}
-	)
+		},
+	})
 }

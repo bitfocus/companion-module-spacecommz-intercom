@@ -1,4 +1,4 @@
-import {  type SomeCompanionConfigField } from '@companion-module/base'
+import { type SomeCompanionConfigField } from '@companion-module/base'
 
 export interface ModuleConfig {
 	port: number
@@ -6,7 +6,6 @@ export interface ModuleConfig {
 
 export function GetConfigFields(): SomeCompanionConfigField[] {
 	return [
-
 		{
 			type: 'number',
 			id: 'port',

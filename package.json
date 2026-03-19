@@ -1,6 +1,6 @@
 {
 	"name": "spacecommz-intercom",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"main": "/dist/main.js",
 	"scripts": {
 		"format": "prettier -w .",
@@ -17,6 +17,7 @@
 	"dependencies": {
 		"@companion-module/base": "^1.8.0",
 		"bufferutil": "^4.0.8",
+		"companion-module-utils": "^0.5.0",
 		"cors": "^2.8.5",
 		"express": "^4.20.0",
 		"socket.io": "^4.7.5",

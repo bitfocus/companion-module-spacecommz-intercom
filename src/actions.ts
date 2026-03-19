@@ -37,4 +37,3 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 	})
 }
- 
