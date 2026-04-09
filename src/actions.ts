@@ -15,16 +15,24 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'listenByIndex',
 			options: [indexInput, modeToggle],
 			callback: async (event) => {
-				// @ts-ignore
-				self.io.emit('listenPL', self.pls[event.options.index - 1].id)
+				const index = (event.options.index as number) - 1
+				if (index < 0 || index >= self.pls.length) {
+					self.log('warn', `listenByIndex: PL index ${index + 1} out of range (have ${self.pls.length})`)
+					return
+				}
+				self.io.emit('listenPL', self.pls[index].id)
 			},
 		},
 		talkPlByIndex: {
 			name: 'talkByIndex',
 			options: [indexInput, modeToggle],
 			callback: async (event) => {
-				// @ts-ignore
-				self.io.emit('talkPL', self.pls[event.options.index - 1].id)
+				const index = (event.options.index as number) - 1
+				if (index < 0 || index >= self.pls.length) {
+					self.log('warn', `talkByIndex: PL index ${index + 1} out of range (have ${self.pls.length})`)
+					return
+				}
+				self.io.emit('talkPL', self.pls[index].id)
 			},
 		},
 		mute: {

@@ -1,5 +1,5 @@
 import { CompanionPresetDefinitions, combineRgb } from '@companion-module/base'
-import { ModuleInstance } from './main'
+import { ModuleInstance } from './main.js'
 
 export function UpdatePresetDefinitions(self: ModuleInstance): void {
 	let presets: CompanionPresetDefinitions = {}

@@ -4,28 +4,29 @@ import { UpdateVariableDefinitions } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
 import { UpdateActions } from './actions.js'
 import { UpdateFeedbacks } from './feedbacks.js'
-import express = require('express')
-import cors = require('cors')
+import express from 'express'
+import cors from 'cors'
 import { Server } from 'http'
-import * as socketio from 'socket.io'
+import { Server as SocketIOServer } from 'socket.io'
 import { UpdatePresetDefinitions } from './preset.js'
 
 export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	config!: ModuleConfig // Setup in init()
 	private app: any
 	private http: Server
-	io: socketio.Server
+	io: SocketIOServer
 	pls: any = []
 	activePls: Record<string, { speaker: string; time: any; isSpeaking: boolean }> = {}
 	barValues: Record<number, number> = {}
 	mute: boolean = false
 	private barInterval: ReturnType<typeof setInterval> | null = null
+	private clientCount: number = 0
 	constructor(internal: unknown) {
 		super(internal)
 
 		this.app = express()
 		this.http = new Server(this.app)
-		this.io = new socketio.Server(this.http, {
+		this.io = new SocketIOServer(this.http, {
 			cors: {
 				origin: '*',
 			},
@@ -36,33 +37,73 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	async init(config: ModuleConfig): Promise<void> {
 		this.config = config
 		this.io.on('connection', (socket) => {
+			this.clientCount++
 			this.updateStatus(InstanceStatus.Ok)
+
 			socket.on('disconnect', () => {
-				console.log('A user disconnected')
-			})
-			socket.on('updatePls', (msg) => {
-				console.log('pls updated')
-				this.pls = msg
-				this.updateVariableDefinitions()
-				this.updatePreset()
-				this.checkFeedbacks('soloState', 'talkState', 'listenState')
+				this.clientCount--
+				this.log('debug', `Client disconnected (${this.clientCount} remaining)`)
+				if (this.clientCount <= 0) {
+					this.clientCount = 0
+					this.updateStatus(InstanceStatus.Connecting, 'Waiting for a connection')
+				}
 			})
 
-			socket.on('updateActivePls', (msg) => {
-				this.activePls = msg
-				this.updateVariableDefinitions()
-				this.startBarAnimation()
-				this.checkFeedbacks('listenState')
+			socket.on('updatePls', (msg: unknown) => {
+				try {
+					if (!Array.isArray(msg)) {
+						this.log('warn', 'updatePls: expected array')
+						return
+					}
+					this.pls = msg
+					this.updateVariableDefinitions()
+					this.updatePreset()
+					this.checkFeedbacks('soloState', 'talkState', 'listenState')
+				} catch (e) {
+					this.log('error', `updatePls handler error: ${e}`)
+				}
 			})
 
-			socket.on('updateMute', (msg) => {
-				console.log('mute updated')
-				this.mute = msg
-				this.checkFeedbacks('muteState')
+			socket.on('updateActivePls', (msg: unknown) => {
+				try {
+					if (typeof msg !== 'object' || msg === null || Array.isArray(msg)) {
+						this.log('warn', 'updateActivePls: expected object')
+						return
+					}
+					this.activePls = msg as Record<string, { speaker: string; time: any; isSpeaking: boolean }>
+					this.updateVariableDefinitions()
+					this.startBarAnimation()
+					this.checkFeedbacks('listenState')
+				} catch (e) {
+					this.log('error', `updateActivePls handler error: ${e}`)
+				}
+			})
+
+			socket.on('updateMute', (msg: unknown) => {
+				try {
+					if (typeof msg !== 'boolean') {
+						this.log('warn', 'updateMute: expected boolean')
+						return
+					}
+					this.mute = msg
+					this.checkFeedbacks('muteState')
+				} catch (e) {
+					this.log('error', `updateMute handler error: ${e}`)
+				}
 			})
 		})
+
+		this.http.on('error', (e: NodeJS.ErrnoException) => {
+			if (e.code === 'EADDRINUSE') {
+				this.updateStatus(InstanceStatus.ConnectionFailure, `Port ${this.config.port} is already in use`)
+			} else {
+				this.updateStatus(InstanceStatus.ConnectionFailure, `HTTP server error: ${e.message}`)
+			}
+			this.log('error', `HTTP server error: ${e.message}`)
+		})
+
 		this.http.listen(this.config.port, () => {
-			console.log('PanelServer Started on port ' + this.config.port)
+			this.log('info', `PanelServer started on port ${this.config.port}`)
 		})
 		this.updateStatus(InstanceStatus.Connecting, 'Waiting for a connection')
 
@@ -110,6 +151,8 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 			clearInterval(this.barInterval)
 			this.barInterval = null
 		}
+		this.io.close()
+		this.http.close()
 		this.log('debug', 'destroy')
 	}
 

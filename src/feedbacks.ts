@@ -32,9 +32,11 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [indexInput],
 			callback: (feedback) => {
 				let index = (feedback.options.index as number) - 1
-				console.log(self.pls[index], 'checking')
 				if (!self.pls[index]) {
-					return {}
+					if (index >= 0) {
+						self.log('debug', `talkState: PL index ${index + 1} out of range (have ${self.pls.length})`)
+					}
+					return false
 				}
 				return self.pls[index].talk
 			},
@@ -46,6 +48,9 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				let index = (feedback.options.index as number) - 1
 				if (!self.pls[index]) {
+					if (index >= 0) {
+						self.log('debug', `listenState: PL index ${index + 1} out of range (have ${self.pls.length})`)
+					}
 					return {}
 				}
 				if (self.pls[index].listen) {
