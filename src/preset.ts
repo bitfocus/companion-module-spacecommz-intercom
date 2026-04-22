@@ -2,9 +2,8 @@ import { CompanionPresetDefinitions, combineRgb } from '@companion-module/base'
 import { ModuleInstance } from './main.js'
 
 export function UpdatePresetDefinitions(self: ModuleInstance): void {
-	let presets: CompanionPresetDefinitions = {}
-	//@ts-ignore
-	self.pls.forEach((pl: any, index: any) => {
+	const presets: CompanionPresetDefinitions = {}
+	self.pls.forEach((_pl: any, index: any) => {
 		presets['talkPL' + index] = {
 			type: 'button',
 			category: 'Talk Channels',

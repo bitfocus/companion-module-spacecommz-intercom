@@ -2,9 +2,8 @@ import { CompanionVariableDefinition, CompanionVariableValues } from '@companion
 import type { ModuleInstance } from './main.js'
 
 export function UpdateVariableDefinitions(self: ModuleInstance): void {
-	let definitions: CompanionVariableDefinition[] = []
-	// @ts-ignore
-	let values: CompanionVariableValues = []
+	const definitions: CompanionVariableDefinition[] = []
+	const values: CompanionVariableValues = {}
 	if (self.pls.length != 0) {
 		self.pls.forEach((_pl: any, index: any) => {
 			definitions.push({

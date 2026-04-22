@@ -39,7 +39,6 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Mute',
 			options: [modeToggle],
 			callback: async (event) => {
-				// @ts-ignore
 				self.io.emit('mute', event.options.mode)
 			},
 		},

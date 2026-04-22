@@ -31,7 +31,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			},
 			options: [indexInput],
 			callback: (feedback) => {
-				let index = (feedback.options.index as number) - 1
+				const index = (feedback.options.index as number) - 1
 				if (!self.pls[index]) {
 					if (index >= 0) {
 						self.log('debug', `talkState: PL index ${index + 1} out of range (have ${self.pls.length})`)
@@ -46,7 +46,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			type: 'advanced',
 			options: [indexInput],
 			callback: (feedback) => {
-				let index = (feedback.options.index as number) - 1
+				const index = (feedback.options.index as number) - 1
 				if (!self.pls[index]) {
 					if (index >= 0) {
 						self.log('debug', `listenState: PL index ${index + 1} out of range (have ${self.pls.length})`)
