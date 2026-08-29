@@ -1,7 +1,9 @@
 import { type SomeCompanionConfigField } from '@companion-module/base'
 
+// Must satisfy JsonObject in 2.x, hence the index signature.
 export interface ModuleConfig {
 	port: number
+	[key: string]: number
 }
 
 export function GetConfigFields(): SomeCompanionConfigField[] {

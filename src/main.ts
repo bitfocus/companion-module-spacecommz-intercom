@@ -1,4 +1,5 @@
-import { InstanceBase, runEntrypoint, InstanceStatus, SomeCompanionConfigField } from '@companion-module/base'
+import { InstanceBase, InstanceStatus, SomeCompanionConfigField } from '@companion-module/base'
+import type { SpaceCommzTypes } from './manifest.js'
 import { GetConfigFields, type ModuleConfig } from './config.js'
 import { UpdateVariableDefinitions } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
@@ -9,8 +10,9 @@ import cors from 'cors'
 import { Server } from 'http'
 import { Server as SocketIOServer } from 'socket.io'
 import { UpdatePresetDefinitions } from './preset.js'
+import { VOLUME_DEFAULT, VOLUME_MAX, VOLUME_MIN } from './inputFields.js'
 
-export class ModuleInstance extends InstanceBase<ModuleConfig> {
+export class ModuleInstance extends InstanceBase<SpaceCommzTypes> {
 	config!: ModuleConfig // Setup in init()
 	private app: any
 	private http: Server
@@ -34,7 +36,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.app.use(cors())
 	}
 
-	async init(config: ModuleConfig): Promise<void> {
+	async init(config: ModuleConfig, _isFirstInit: boolean, _secrets: undefined): Promise<void> {
 		this.config = config
 		this.io.on('connection', (socket) => {
 			this.clientCount++
@@ -58,7 +60,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 					this.pls = msg
 					this.updateVariableDefinitions()
 					this.updatePreset()
-					this.checkFeedbacks('soloState', 'talkState', 'listenState')
+					this.checkFeedbacks('talkState', 'listenState', 'volumeLevel')
 				} catch (e) {
 					this.log('error', `updatePls handler error: ${e}`)
 				}
@@ -116,6 +118,46 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		return this.activePls[plId]
 	}
 
+	// Volume as last reported by the panel on the PL object. PLs that predate
+	// volume support (or haven't reported yet) fall back to the panel default.
+	getPlVolume(index: number): number {
+		const pl = this.pls[index]
+		if (!pl || typeof pl.volume !== 'number' || Number.isNaN(pl.volume)) {
+			return VOLUME_DEFAULT
+		}
+		return this.clampVolume(pl.volume)
+	}
+
+	clampVolume(value: number): number {
+		return Math.min(VOLUME_MAX, Math.max(VOLUME_MIN, Math.round(value)))
+	}
+
+	// Push an absolute volume to the panel and reflect it locally so repeated
+	// relative steps don't stall waiting for the panel's updatePls round-trip.
+	setPlVolume(index: number, value: number): void {
+		const pl = this.pls[index]
+		if (!pl) {
+			return
+		}
+		const volume = this.clampVolume(value)
+		pl.volume = volume
+		this.io.emit('setVolumePL', pl.id, volume)
+		this.updateVariableDefinitions()
+		this.checkFeedbacks('volumeLevel')
+	}
+
+	// Mirror the animated speaking state into variables: the level drives the
+	// listen gauge, the speaker name the talk button's second line.
+	updateLevelVariables(): void {
+		const values: Record<string, string | number> = {}
+		this.pls.forEach((pl: any, i: number) => {
+			values['pl_' + (i + 1) + '_level'] = this.barValues[i] ?? 0
+			const active = this.getActivePl(pl.id)
+			values['pl_' + (i + 1) + '_speaker'] = active?.isSpeaking ? active.speaker : ''
+		})
+		this.setVariableValues(values)
+	}
+
 	startBarAnimation(): void {
 		// Clear any existing interval
 		if (this.barInterval) {
@@ -136,11 +178,13 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 						this.barValues[i] = 0
 					}
 				})
+				this.updateLevelVariables()
 				this.checkFeedbacks('listenState')
 			}, 200)
 		} else {
 			// Reset all bar values
 			this.barValues = {}
+			this.updateLevelVariables()
 			this.checkFeedbacks('listenState')
 		}
 	}
@@ -156,7 +200,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.log('debug', 'destroy')
 	}
 
-	async configUpdated(config: ModuleConfig): Promise<void> {
+	async configUpdated(config: ModuleConfig, _secrets: undefined): Promise<void> {
 		this.config = config
 	}
 
@@ -181,4 +225,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	}
 }
 
-runEntrypoint(ModuleInstance, UpgradeScripts)
+// Companion 5 loads the class from the default export and reads upgrade
+// scripts from a named `UpgradeScripts` export (replaces runEntrypoint).
+export default ModuleInstance
+export { UpgradeScripts }

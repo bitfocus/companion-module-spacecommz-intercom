@@ -7,12 +7,12 @@ import type {
 } from '@companion-module/base'
 import type { ModuleConfig } from './config.js'
 
-export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig>[] = [
+export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig, undefined>[] = [
 	// v1.1.0: listenState changed from boolean to advanced feedback
 	function (
 		_context: CompanionUpgradeContext<ModuleConfig>,
-		props: CompanionStaticUpgradeProps<ModuleConfig>,
-	): CompanionStaticUpgradeResult<ModuleConfig> {
+		props: CompanionStaticUpgradeProps<ModuleConfig, undefined>,
+	): CompanionStaticUpgradeResult<ModuleConfig, undefined> {
 		const updatedFeedbacks: CompanionMigrationFeedback[] = []
 
 		for (const feedback of props.feedbacks) {
