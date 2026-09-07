@@ -32,7 +32,7 @@
 		"utf-8-validate": "^6.0.4"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.8.0",
+		"@companion-module/tools": "^3.1.0",
 		"@types/cors": "^2.8.17",
 		"@types/express": "^4.17.21",
 		"@types/node": "^22.19.3",
