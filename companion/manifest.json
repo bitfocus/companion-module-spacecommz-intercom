@@ -1,4 +1,5 @@
 {
+	"type": "connection",
 	"id": "spacecommz-intercom",
 	"name": "spacecommz-intercom",
 	"shortname": "SpaceCommz",
